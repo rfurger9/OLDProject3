@@ -1,7 +1,7 @@
 <launch>
   <!-- Robot pose -->
-  <arg name="x" default="0"/>
-  <arg name="y" default="0"/>
+  <arg name="x" default="5"/>
+  <arg name="y" default="-4"/>
   <arg name="z" default="0"/>
   <arg name="roll" default="0"/>
   <arg name="pitch" default="0"/>
@@ -21,22 +21,27 @@
     <arg name="world_name" value="$(arg world_file)"/>
   </include>
 
+  <!-- Delay before starting the robot spawner -->
+  <node pkg="rospy" type="sleep" name="sleep_5" args="5" />
+
   <!-- Spawn My Robot -->
   <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
         args="-urdf -param robot_description -model my_robot
               -x $(arg x) -y $(arg y) -z $(arg z)
-              -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)"/>
+              -R $(arg roll) -P $(arg pitch) -Y $(arg yaw)">
+    <remap from="/robot_description" to="/robot_description"/>
+  </node>
 
   <!-- Robot State Publisher -->
   <node name="robot_state_publisher_main" pkg="robot_state_publisher" type="robot_state_publisher" output="screen">
     <param name="publish_frequency" type="double" value="50.0"/>
   </node>
 
-  <!-- Static transform publisher to link map to odom -->
-  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
-
   <!-- Map Server -->
   <arg name="map_file" default="$(find my_robot)/maps/AMGOffice.yaml"/>
-  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" respawn="true"/>
+
+  <!-- Include AMCL -->
+  <include file="$(find my_robot)/launch/amcl.launch"/>
 </launch>
 
